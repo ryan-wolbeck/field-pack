@@ -33,6 +33,7 @@ type View =
   | { name: "binder"; binderId: string; tab?: BinderTab }
   | { name: "profile" }
   | { name: "about" }
+  | { name: "install" }
   | { name: "import" };
 
 type InstallState = "android-ready" | "ios" | "hidden";
@@ -210,6 +211,9 @@ export function App() {
           <button className={view.name === "import" ? "active" : ""} onClick={() => setView({ name: "import" })}>
             <span>Import</span>
           </button>
+          <button className={view.name === "install" ? "active" : ""} onClick={() => setView({ name: "install" })}>
+            <span>Install</span>
+          </button>
           <button className={view.name === "about" ? "active" : ""} onClick={() => setView({ name: "about" })}>
             <span>Privacy</span>
           </button>
@@ -296,6 +300,7 @@ export function App() {
             }}
           />
         )}
+        {view.name === "install" && <InstallPage />}
         {view.name === "about" && <AboutPage />}
       </main>
     </div>
@@ -1573,49 +1578,81 @@ function ProfilePage({
   );
 }
 
+function InstallPage() {
+  const { state, install, dismiss } = useInstallPrompt();
+  return (
+    <section className="panel narrow readable">
+      <h1>Install Field Pack</h1>
+      <p>
+        Field Pack works offline after the first load. Installing it to your home screen gives
+        you a full-screen app that opens instantly with no browser chrome.
+      </p>
+      {state === "android-ready" && (
+        <div className="install-banner" style={{ marginBottom: "1rem" }}>
+          <div className="install-banner-text">
+            <strong>Ready to install</strong>
+            <span>Your browser supports one-tap install.</span>
+          </div>
+          <div className="install-banner-actions">
+            <button className="primary" onClick={install}>Install App</button>
+            <button onClick={dismiss}>Not Now</button>
+          </div>
+        </div>
+      )}
+      <h2>iPhone / iPad</h2>
+      <p>
+        Open Field Pack in <strong>Safari</strong>. Tap the{" "}
+        <span className="install-icon-inline" aria-label="Share icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 1v9M5 4l3-3 3 3M3 7v7h10V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </span>{" "}
+        <strong>Share</strong> button at the bottom of the screen, scroll down in the sheet, and tap{" "}
+        <strong>Add to Home Screen</strong>. Field Pack will appear as an app icon on your home screen
+        and open full-screen without browser controls.
+      </p>
+      <h2>Android</h2>
+      <p>
+        Open Field Pack in <strong>Chrome</strong>. Tap the three-dot menu (⋮) in the top-right corner
+        and choose <strong>Add to Home Screen</strong> or <strong>Install app</strong>. A banner may
+        also appear automatically at the bottom of Chrome — tap <strong>Install</strong> there instead.
+      </p>
+      <h2>Desktop (Chrome or Edge)</h2>
+      <p>
+        Look for an install icon in the address bar — it looks like a screen with a small download
+        arrow. Click it, then click <strong>Install</strong>. You can also open the browser menu and
+        choose <strong>Install Field Pack</strong>.
+      </p>
+      <h2>After installing</h2>
+      <p>
+        Your data stays on your device. Once installed, Field Pack loads from cache and works fully
+        offline. Export a binder JSON file as a manual backup before switching browsers or devices.
+      </p>
+    </section>
+  );
+}
+
 function AboutPage() {
   return (
     <section className="panel narrow readable">
-      <h1>About / Privacy</h1>
+      <h1>Privacy</h1>
       <p>
-        Field Pack is a local-first, backendless PWA for practical outdoor and field-use
-        binders. The MVP does not use accounts, analytics, hosted databases, cloud sync,
-        payment systems, tracking, or AI services.
+        Field Pack is a local-first, backendless PWA. It does not use accounts, analytics,
+        hosted databases, cloud sync, payment systems, tracking, or AI services.
       </p>
       <p>
-        The optional profile is also local-only. It is a convenience for adding yourself
-        to binder participant lists, not a login identity.
+        The optional profile is local-only — a convenience for adding yourself to binder
+        participant lists, not a login identity.
       </p>
       <p>
-        Your binders, entries, and participant records are stored locally in this browser
-        using IndexedDB. Data is not uploaded anywhere by Field Pack. After the first load,
-        the app shell is cached so the app can keep working offline.
-      </p>
-      <h2>Installing for offline use</h2>
-      <p>
-        Field Pack works offline after the first load. Installing it to your home screen gives
-        you a full-screen app with no browser chrome.
-      </p>
-      <p>
-        <strong>iPhone / iPad (Safari):</strong> Tap the Share button (the box with an arrow
-        pointing up) at the bottom of Safari, scroll down, and tap <strong>Add to Home Screen</strong>.
-        Field Pack will appear as an app icon and open without browser controls.
-      </p>
-      <p>
-        <strong>Android (Chrome):</strong> Tap the three-dot menu in Chrome and tap{" "}
-        <strong>Add to Home Screen</strong> or <strong>Install app</strong>. A prompt may also
-        appear automatically at the bottom of the screen.
-      </p>
-      <p>
-        <strong>Desktop (Chrome / Edge):</strong> Look for an install icon (a screen with a
-        download arrow) in the address bar, or open the browser menu and choose{" "}
-        <strong>Install Field Pack</strong>.
+        Your binders, entries, and participant records are stored in this browser using
+        IndexedDB. No data is uploaded anywhere by Field Pack. After the first load, the app
+        shell is cached so the app works offline.
       </p>
       <p>
         Sharing happens by file. When you export a binder, that file may include participant
-        names, contact details, emergency contact details, notes, trip plans, locations, and
-        other personal information. Anyone who receives and imports the file gets their own
-        local copy.
+        names, contact details, emergency contacts, notes, trip plans, and locations.
+        Anyone who receives and imports the file gets their own local copy.
       </p>
       <p>
         You decide what to export and who to share it with. You are also responsible for
