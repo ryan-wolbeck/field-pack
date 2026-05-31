@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createBinder,
   createEntry,
@@ -34,6 +34,54 @@ type View =
   | { name: "profile" }
   | { name: "about" }
   | { name: "import" };
+
+type InstallState = "android-ready" | "ios" | "hidden";
+
+function useInstallPrompt(): { state: InstallState; install: () => void; dismiss: () => void } {
+  const [state, setState] = useState<InstallState>(() => {
+    if (localStorage.getItem("field-pack-install-dismissed")) return "hidden";
+    if (window.matchMedia("(display-mode: standalone)").matches) return "hidden";
+    const ua = navigator.userAgent.toLowerCase();
+    if (/iphone|ipad|ipod/.test(ua) && !("standalone" in navigator && (navigator as { standalone?: boolean }).standalone)) {
+      return "ios";
+    }
+    return "hidden";
+  });
+
+  const promptRef = useRef<{ prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      promptRef.current = e as unknown as typeof promptRef.current;
+      if (!localStorage.getItem("field-pack-install-dismissed")) {
+        setState("android-ready");
+      }
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setState("hidden");
+    window.addEventListener("appinstalled", handler);
+    return () => window.removeEventListener("appinstalled", handler);
+  }, []);
+
+  const install = useCallback(async () => {
+    if (!promptRef.current) return;
+    await promptRef.current.prompt();
+    const { outcome } = await promptRef.current.userChoice;
+    if (outcome === "accepted") setState("hidden");
+  }, []);
+
+  const dismiss = useCallback(() => {
+    localStorage.setItem("field-pack-install-dismissed", "1");
+    setState("hidden");
+  }, []);
+
+  return { state, install, dismiss };
+}
 
 type BinderTab = "entries" | "participants" | "share";
 type Notice = { type: "success" | "error"; text: string } | null;
@@ -254,6 +302,43 @@ export function App() {
   );
 }
 
+function InstallBanner({ state, install, dismiss }: { state: InstallState; install: () => void; dismiss: () => void }) {
+  if (state === "hidden") return null;
+
+  if (state === "android-ready") {
+    return (
+      <div className="install-banner">
+        <div className="install-banner-text">
+          <strong>Install Field Pack</strong>
+          <span>Add to your home screen for offline use — no app store needed.</span>
+        </div>
+        <div className="install-banner-actions">
+          <button className="primary" onClick={install}>Install App</button>
+          <button onClick={dismiss}>Not Now</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="install-banner">
+      <div className="install-banner-text">
+        <strong>Install for offline use</strong>
+        <span>
+          On iPhone or iPad: tap the{" "}
+          <span className="install-icon-inline" aria-label="Share icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 1v9M5 4l3-3 3 3M3 7v7h10V7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>{" "}
+          Share button in Safari, then tap <strong>Add to Home Screen</strong>.
+        </span>
+      </div>
+      <button className="install-banner-dismiss" onClick={dismiss} aria-label="Dismiss install prompt">✕</button>
+    </div>
+  );
+}
+
 function Dashboard({
   binders,
   onOpen,
@@ -273,6 +358,7 @@ function Dashboard({
   const profile = getLocalProfile();
   const sharedPacks = binders.filter(isSharedPack);
   const otherBinders = binders.filter((binder) => !isSharedPack(binder));
+  const { state: installState, install, dismiss } = useInstallPrompt();
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -287,6 +373,7 @@ function Dashboard({
 
   return (
     <section className="dashboard-layout">
+      <InstallBanner state={installState} install={install} dismiss={dismiss} />
       <div className="dashboard-hero">
         <div>
           <div className="hero-logo-tile">
@@ -1504,9 +1591,25 @@ function AboutPage() {
         using IndexedDB. Data is not uploaded anywhere by Field Pack. After the first load,
         the app shell is cached so the app can keep working offline.
       </p>
+      <h2>Installing for offline use</h2>
       <p>
-        If your browser supports installation, use the browser or operating system install
-        option to add Field Pack to your home screen, dock, or app launcher.
+        Field Pack works offline after the first load. Installing it to your home screen gives
+        you a full-screen app with no browser chrome.
+      </p>
+      <p>
+        <strong>iPhone / iPad (Safari):</strong> Tap the Share button (the box with an arrow
+        pointing up) at the bottom of Safari, scroll down, and tap <strong>Add to Home Screen</strong>.
+        Field Pack will appear as an app icon and open without browser controls.
+      </p>
+      <p>
+        <strong>Android (Chrome):</strong> Tap the three-dot menu in Chrome and tap{" "}
+        <strong>Add to Home Screen</strong> or <strong>Install app</strong>. A prompt may also
+        appear automatically at the bottom of the screen.
+      </p>
+      <p>
+        <strong>Desktop (Chrome / Edge):</strong> Look for an install icon (a screen with a
+        download arrow) in the address bar, or open the browser menu and choose{" "}
+        <strong>Install Field Pack</strong>.
       </p>
       <p>
         Sharing happens by file. When you export a binder, that file may include participant

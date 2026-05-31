@@ -582,6 +582,82 @@ dd {
   line-height: 1.45;
 }
 
+.install-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(18, 61, 40, 0.25);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(18, 61, 40, 0.07), rgba(194, 147, 53, 0.06)), var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.install-banner-text {
+  display: grid;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.install-banner-text strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.install-banner-text span {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.install-banner-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.install-banner-dismiss {
+  flex-shrink: 0;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.install-icon-inline {
+  display: inline-flex;
+  vertical-align: middle;
+  color: #0070c9;
+}
+
+@media (max-width: 600px) {
+  .install-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .install-banner-actions {
+    flex-direction: column;
+  }
+
+  .install-banner-dismiss {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .install-banner:has(.install-banner-dismiss) {
+    position: relative;
+    padding-right: 2.5rem;
+  }
+}
+
 @media print {
   .sidebar,
   .row-actions,
