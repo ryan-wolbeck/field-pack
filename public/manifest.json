@@ -1,0 +1,20 @@
+{
+  "name": "Field Pack",
+  "short_name": "Field Pack",
+  "description": "Local-first outdoor and field-use binders that work offline.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#f5f1e8",
+  "theme_color": "#2f5d50",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "travel", "utilities"]
+}
